@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌱 GreenPipeline Framework - Demo Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #e8f5e9 0%, #b2dfdb 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            color: #2e7d32;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #558b2f;
+            font-size: 1.1rem;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+        .step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            right: -50%;
+            width: 100%;
+            height: 2px;
+            background: #e0e0e0;
+            z-index: 0;
+        }
+
+        .step.active:not(:last-child)::after {
+            background: #4caf50;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            background: #e0e0e0;
+            color: #757575;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.5rem;
+            font-weight: bold;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step.active .step-circle {
+            background: #4caf50;
+            color: white;
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: #424242;
+            font-size: 0.9rem;
+        }
+
+        .step-desc {
+            font-size: 0.75rem;
+            color: #757575;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metrics-section {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-left: 4px solid;
+        }
+
+        .metric-card.energy { border-left-color: #ff9800; }
+        .metric-card.carbon { border-left-color: #4caf50; }
+        .metric-card.savings { border-left-color: #2196f3; }
+        .metric-card.cost { border-left-color: #9c27b0; }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-icon {
+            font-size: 1.5rem;
+        }
+
+        .metric-label {
+            font-size: 0.7rem;
+            color: #757575;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #212121;
+        }
+
+        .metric-unit {
+            font-size: 0.9rem;
+            color: #757575;
+        }
+
+        .code-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: #424242;
+        }
+
+        .code-header-icon {
+            margin-right: 0.5rem;
+            color: #ff9800;
+        }
+
+        .code-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .code-block {
+            background: #f5f5f5;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .code-block-header {
+            padding: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .code-block.before .code-block-header {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .code-block.after .code-block-header {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .code-content {
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+
+        .code-block.before .code-content {
+            background: #fff5f5;
+        }
+
+        .code-block.after .code-content {
+            background: #f1f8f4;
+        }
+
+        .console {
+            background: #1e1e1e;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .console-header {
+            background: #2d2d2d;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .console-title {
+            color: #4caf50;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .run-button {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.3s;
+        }
+
+        .run-button:hover:not(:disabled) {
+            background: #45a049;
+        }
+
+        .run-button:disabled {
+            background: #616161;
+            cursor: not-allowed;
+        }
+
+        .console-body {
+            padding: 1.5rem;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .console-line {
+            color: #4caf50;
+            margin-bottom: 0.5rem;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .console-empty {
+            color: #757575;
+            text-align: center;
+            margin-top: 8rem;
+        }
+
+        .impact-banner {
+            background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            color: white;
+            display: none;
+        }
+
+        .impact-banner.show {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .impact-content h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .impact-content p {
+            opacity: 0.9;
+        }
+
+        .impact-stats {
+            text-align: right;
+        }
+
+        .impact-number {
+            font-size: 3rem;
+            font-weight: bold;
+        }
+
+        .impact-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: #558b2f;
+            font-size: 0.9rem;
+        }
+
+        .footer strong {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🌱 GreenPipeline Framework</h1>
+            <p>Haciendo visible lo invisible: la huella de carbono de tu código</p>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="progress-steps">
+            <div class="step active" id="step1">
+                <div class="step-circle">1</div>
+                <div class="step-title">Pipeline Tradicional</div>
+                <div class="step-desc">Sin visibilidad de consumo</div>
+            </div>
+            <div class="step" id="step2">
+                <div class="step-circle">2</div>
+                <div class="step-title">Integración GreenPipeline</div>
+                <div class="step-desc">Añadiendo medición</div>
+            </div>
+            <div class="step" id="step3">
+                <div class="step-circle">3</div>
+                <div class="step-title">Análisis en Tiempo Real</div>
+                <div class="step-desc">Detectando ineficiencias</div>
+            </div>
+            <div class="step" id="step4">
+                <div class="step-circle">4</div>
+                <div class="step-title">Optimización Aplicada</div>
+                <div class="step-desc">Reducción del 28%</div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Left Column: Metrics and Code -->
+            <div>
+                <!-- Metrics -->
+                <div class="metrics-section">
+                    <div class="metric-card energy">
+                        <div class="metric-header">
+                            <div class="metric-icon">⚡</div>
+                            <div class="metric-label">EN TIEMPO REAL</div>
+                        </div>
+                        <div class="metric-value" id="energyValue">0</div>
+                        <div class="metric-unit">Joules consumidos</div>
+                    </div>
+
+                    <div class="metric-card carbon">
+                        <div class="metric-header">
+                            <div class="metric-icon">🌍</div>
+                            <div class="metric-label">CO2e</div>
+                        </div>
+                        <div class="metric-value" id="carbonValue">0.00</div>
+                        <div class="metric-unit">kg CO2 equivalente</div>
+                    </div>
+
+                    <div class="metric-card savings">
+                        <div class="metric-header">
+                            <div class="metric-icon">📉</div>
+                            <div class="metric-label">AHORRO</div>
+                        </div>
+                        <div class="metric-value" id="savingsValue" style="color: #4caf50;">-0%</div>
+                        <div class="metric-unit">Reducción emisiones</div>
+                    </div>
+
+                    <div class="metric-card cost">
+                        <div class="metric-header">
+                            <div class="metric-icon">💰</div>
+                            <div class="metric-label">COSTO</div>
+                        </div>
+                        <div class="metric-value" id="costValue">$0.000</div>
+                        <div class="metric-unit">USD por build</div>
+                    </div>
+                </div>
+
+                <!-- Code Comparison -->
+                <div class="code-section">
+                    <div class="code-header">
+                        <span class="code-header-icon">⚠️</span>
+                        Código Detectado
+                    </div>
+                    <div class="code-comparison">
+                        <div class="code-block before">
+                            <div class="code-block-header">❌ ANTES (89 joules)</div>
+                            <div class="code-content">// api/users.js:127
+function getUsers() {
+  users.forEach(user => {
+    // Query DB cada vez
+    db.query(user.id)
+  })
+}</div>
+                        </div>
+                        <div class="code-block after">
+                            <div class="code-block-header">✅ DESPUÉS (63 joules)</div>
+                            <div class="code-content">// Optimizado por GreenPipeline
+const cache = new Map()
+function getUsers() {
+  // Memoización
+  return cache.get('users')
+}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Console -->
+            <div class="console">
+                <div class="console-header">
+                    <div class="console-title">Pipeline Console</div>
+                    <button class="run-button" id="runButton" onclick="runDemo()">
+                        <span>▶</span>
+                        <span id="buttonText">Ejecutar Demo</span>
+                    </button>
+                </div>
+                <div class="console-body" id="consoleBody">
+                    <div class="console-empty">
+                        Presiona "Ejecutar Demo" para ver<br>
+                        GreenPipeline en acción
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Impact Banner -->
+        <div class="impact-banner" id="impactBanner">
+            <div class="impact-content">
+                <h3>🎉 Impacto de Esta Ejecución</h3>
+                <p>Equivalente a cargar <strong id="phonesEquivalent">0</strong> smartphones de 0 a 100%</p>
+            </div>
+            <div class="impact-stats">
+                <div class="impact-number">28%</div>
+                <div class="impact-label">menos emisiones</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>📊 Basado en: <strong>Kepler (CNCF)</strong> + <strong>EcoCI</strong> + <strong>Carbon Aware SDK</strong> + <strong>SCI ISO Standard</strong></p>
+        </div>
+    </div>
+
+    <script>
+        let isRunning = false;
+        let currentStep = 1;
+
+        const stages = [
+            { time: 500, log: "🔨 Build iniciado...", energy: 45, carbon: 0.18, cost: 0.005, step: 1 },
+            { time: 1200, log: "⚠️  Detectado: loop ineficiente en api/users.js:127", energy: 89, carbon: 0.36, cost: 0.011, step: 2 },
+            { time: 1800, log: "🧪 Tests ejecutándose...", energy: 156, carbon: 0.62, cost: 0.019, step: 2 },
+            { time: 2400, log: "📊 GreenPipeline: Intensidad de carbono actual: 420g CO2/kWh", energy: 234, carbon: 0.98, cost: 0.028, step: 3 },
+            { time: 3000, log: "💡 Sugerencia: Memoizar función getUsers() → -15% energía", energy: 198, carbon: 0.83, cost: 0.024, optimization: 15, step: 3 },
+            { time: 3600, log: "🌱 Carbon-Aware: Red eléctrica con 62% renovables", energy: 198, carbon: 0.75, cost: 0.024, optimization: 15, step: 3 },
+            { time: 4200, log: "✅ Optimización aplicada automáticamente", energy: 169, carbon: 0.64, cost: 0.020, optimization: 28, step: 4 },
+            { time: 4500, log: "🎯 Pipeline completado - Ahorro: 28% emisiones vs baseline", energy: 169, carbon: 0.64, cost: 0.020, optimization: 28, step: 4 }
+        ];
+
+        function updateStep(stepNumber) {
+            for (let i = 1; i <= 4; i++) {
+                const step = document.getElementById(`step${i}`);
+                if (i <= stepNumber) {
+                    step.classList.add('active');
+                } else {
+                    step.classList.remove('active');
+                }
+            }
+        }
+
+        function addConsoleLog(message) {
+            const consoleBody = document.getElementById('consoleBody');
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = message;
+            consoleBody.appendChild(line);
+            consoleBody.scrollTop = consoleBody.scrollHeight;
+        }
+
+        function updateMetrics(energy, carbon, cost, optimization = 0) {
+            document.getElementById('energyValue').textContent = Math.round(energy);
+            document.getElementById('carbonValue').textContent = carbon.toFixed(2);
+            document.getElementById('costValue').textContent = '$' + cost.toFixed(3);
+            document.getElementById('savingsValue').textContent = '-' + optimization + '%';
+        }
+
+        function runDemo() {
+            if (isRunning) return;
+
+            isRunning = true;
+            const runButton = document.getElementById('runButton');
+            const buttonText = document.getElementById('buttonText');
+            const consoleBody = document.getElementById('consoleBody');
+            const impactBanner = document.getElementById('impactBanner');
+
+            // Reset
+            consoleBody.innerHTML = '';
+            impactBanner.classList.remove('show');
+            updateMetrics(0, 0, 0, 0);
+            updateStep(1);
+
+            // Disable button
+            runButton.disabled = true;
+            buttonText.textContent = 'Ejecutando...';
+
+            // Run stages
+            stages.forEach(({ time, log, energy, carbon, cost, optimization, step }) => {
+                setTimeout(() => {
+                    addConsoleLog(log);
+                    updateMetrics(energy, carbon, cost, optimization || 0);
+                    updateStep(step);
+
+                    // Show impact banner at the end
+                    if (time >= 4500) {
+                        impactBanner.classList.add('show');
+                        const phones = Math.round((carbon * 1000) / 0.062);
+                        document.getElementById('phonesEquivalent').textContent = phones;
+                        
+                        // Re-enable button
+                        runButton.disabled = false;
+                        buttonText.textContent = 'Ejecutar Demo';
+                        isRunning = false;
+                    }
+                }, time);
+            });
+        }
+
+        // Auto-run on load (optional)
+        // window.addEventListener('load', () => {
+        //     setTimeout(runDemo, 1000);
+        // });
+    </script>
+</body>
+</html>
