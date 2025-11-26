@@ -1,0 +1,10 @@
+{
+  "name": "greenpipeline",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "echo \"No tests defined\" && exit 0",
+    "build": "echo \"No build step defined\" && exit 0"
+  },
+  "dependencies": {}
+}
