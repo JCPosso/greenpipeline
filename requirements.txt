@@ -1,0 +1,14 @@
+# Core dependencies
+psutil==5.9.5
+requests==2.31.0
+click==8.1.7
+
+# Optional: Dashboard
+flask==2.3.3
+plotly==5.17.0
+
+# Optional: Development
+pytest==7.4.2
+pytest-cov==4.1.0
+black==23.9.1
+flake8==6.1.0
