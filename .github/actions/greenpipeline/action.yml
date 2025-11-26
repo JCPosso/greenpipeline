@@ -216,7 +216,7 @@ runs:
           LOCATION=$(jq -r '.location' < "$REPORT_PATH")
           PHONES=$(jq -r '.equivalents.smartphone_charges' < "$REPORT_PATH")
 
-          COMMENT="## 🌱 GreenPipeline Carbon Report\n\n| Métrica | Valor |\n|---------|-------|\n| ⏱️ Duración | ${DURATION}s |\n| ⚡ Energía | ${ENERGY} joules |\n| 🌍 Emisiones | **${CARBON}g CO2e** |\n| 📍 Ubicación | ${LOCATION} |\n\n💡 **Equivalente a:** ${PHONES} cargas completas de smartphone\n\n---\n_Medido por [GreenPipeline Framework](https://github.com/greenpipeline)_"
+          COMMENT=$'## 🌱 GreenPipeline Carbon Report\n\n| Métrica       | Valor                      |\n|---------------|----------------------------:|\n| ⏱️ Duración    | `'+"${DURATION}"+'s`             |\n| ⚡ Energía     | `'+"${ENERGY}"+'` joules         |\n| 🌍 Emisiones   | **`'+"${CARBON}"+' g CO2e`**     |\n| 📍 Ubicación   | `'+"${LOCATION}"+'`              |\n\n**Equivalente:** `'+"${PHONES}"+'` cargas completas de smartphone\n\n---\n_Medido por [GreenPipeline Framework](https://github.com/greenpipeline)_' 
 
           # Publicar comentario usando la API de GitHub (requiere permiso 'issues: write')
           PAYLOAD=$(jq -n --arg body "$COMMENT" '{body: $body}')
