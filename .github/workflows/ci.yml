@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # ⭐ INICIO DE MEDICIÓN
+      # INICIO DE MEDICIÓN
       - name: Start GreenPipeline
         uses: ./.github/actions/greenpipeline
         with:
@@ -24,14 +24,17 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+        working-directory: ./dashboard
 
       - name: Run tests
         run: npm test
+        working-directory: ./dashboard
 
       - name: Build
         run: npm run build
+        working-directory: ./dashboard
 
-      # ⭐ REPORTE FINAL
+      #  REPORTE FINAL
       - name: GreenPipeline Report
         uses: ./.github/actions/greenpipeline
         with:
