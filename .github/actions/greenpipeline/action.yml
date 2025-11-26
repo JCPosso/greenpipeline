@@ -206,6 +206,7 @@ runs:
         PR_NUMBER: ${{ github.event.pull_request.number }}
         REPO: ${{ github.repository }}
         WORKSPACE: ${{ github.workspace }}
+        GP_THRESHOLD: ${{ inputs.fail-on-threshold }}
       run: |
         REPORT_PATH="$WORKSPACE/greenpipeline_report.json"
         if [ -f "$REPORT_PATH" ]; then
@@ -216,7 +217,24 @@ runs:
           LOCATION=$(jq -r '.location' < "$REPORT_PATH")
           PHONES=$(jq -r '.equivalents.smartphone_charges' < "$REPORT_PATH")
 
-          COMMENT=$'## 🌱 GreenPipeline Carbon Report\n\n| Métrica       | Valor                      |\n|---------------|----------------------------:|\n| ⏱️ Duración    | `'+"${DURATION}"+'s`             |\n| ⚡ Energía     | `'+"${ENERGY}"+'` joules         |\n| 🌍 Emisiones   | **`'+"${CARBON}"+' g CO2e`**     |\n| 📍 Ubicación   | `'+"${LOCATION}"+'`              |\n\n**Equivalente:** `'+"${PHONES}"+'` cargas completas de smartphone\n\n---\n_Medido por [GreenPipeline Framework](https://github.com/greenpipeline)_' 
+          COMMENT=$(cat <<EOF
+                <h2>🌱 GreenPipeline Carbon Report</h2>
+                <table>
+                  <thead>
+                    <tr><th align="left">Métrica</th><th align="right">Valor</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>⏱️ Duración</td><td align="right"><code>${DURATION}s</code></td></tr>
+                    <tr><td>⚡ Energía</td><td align="right"><code>${ENERGY} joules</code></td></tr>
+                    <tr><td>🌍 Emisiones</td><td align="right"><strong><code>${CARBON} g CO2e</code></strong></td></tr>
+                    <tr><td>📍 Ubicación</td><td align="right"><code>${LOCATION}</code></td></tr>
+                  </tbody>
+                </table>
+                <p><strong>Equivalente:</strong> <code>${PHONES}</code> cargas completas de smartphone</p>
+                <hr>
+                <p><em>Medido por <a href="https://github.com/greenpipeline">GreenPipeline Framework</a></em></p>
+                EOF
+                )
 
           # Publicar comentario usando la API de GitHub (requiere permiso 'issues: write')
           PAYLOAD=$(jq -n --arg body "$COMMENT" '{body: $body}')
