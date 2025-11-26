@@ -203,30 +203,25 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+        WORKSPACE: ${{ github.workspace }}
       run: |
-        if [ -f "/tmp/greenpipeline_report.json" ]; then
+        REPORT_PATH="$WORKSPACE/greenpipeline_report.json"
+        if [ -f "$REPORT_PATH" ]; then
           # Crear comentario con resultados
-          REPORT=$(cat /tmp/greenpipeline_report.json)
-          CARBON=$(echo $REPORT | jq -r '.metrics.carbon_grams')
-          ENERGY=$(echo $REPORT | jq -r '.metrics.energy_joules')
-          DURATION=$(echo $REPORT | jq -r '.duration_seconds')
-          LOCATION=$(echo $REPORT | jq -r '.location')
-          PHONES=$(echo $REPORT | jq -r '.equivalents.smartphone_charges')
-          
-          COMMENT="## 🌱 GreenPipeline Carbon Report
-          
-          | Métrica | Valor |
-          |---------|-------|
-          | ⏱️ Duración | ${DURATION}s |
-          | ⚡ Energía | ${ENERGY} joules |
-          | 🌍 Emisiones | **${CARBON}g CO2e** |
-          | 📍 Ubicación | ${LOCATION} |
-          
-          💡 **Equivalente a:** ${PHONES} cargas completas de smartphone
-          
-          ---
-          _Medido por [GreenPipeline Framework](https://github.com/greenpipeline)_"
-          
-          # Comentar en PR (requiere permisos)
-          echo "$COMMENT"
+          CARBON=$(jq -r '.metrics.carbon_grams' < "$REPORT_PATH")
+          ENERGY=$(jq -r '.metrics.energy_joules' < "$REPORT_PATH")
+          DURATION=$(jq -r '.duration_seconds' < "$REPORT_PATH")
+          LOCATION=$(jq -r '.location' < "$REPORT_PATH")
+          PHONES=$(jq -r '.equivalents.smartphone_charges' < "$REPORT_PATH")
+
+          COMMENT="## 🌱 GreenPipeline Carbon Report\n\n| Métrica | Valor |\n|---------|-------|\n| ⏱️ Duración | ${DURATION}s |\n| ⚡ Energía | ${ENERGY} joules |\n| 🌍 Emisiones | **${CARBON}g CO2e** |\n| 📍 Ubicación | ${LOCATION} |\n\n💡 **Equivalente a:** ${PHONES} cargas completas de smartphone\n\n---\n_Medido por [GreenPipeline Framework](https://github.com/greenpipeline)_"
+
+          # Publicar comentario usando la API de GitHub (requiere permiso 'issues: write')
+          PAYLOAD=$(jq -n --arg body "$COMMENT" '{body: $body}')
+          curl -s -H "Authorization: Bearer $GITHUB_TOKEN" -H "Content-Type: application/json" -d "$PAYLOAD" "https://api.github.com/repos/$REPO/issues/$PR_NUMBER/comments" >/dev/null
+          echo "Comentario publicado en PR #$PR_NUMBER"
+        else
+          echo "No se encontró $REPORT_PATH, no se publicará comentario."
         fi
