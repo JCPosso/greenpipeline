@@ -1,0 +1,232 @@
+# action.yml - GitHub Action para GreenPipeline
+# Ubicación: .github/actions/greenpipeline/action.yml
+
+name: 'GreenPipeline Carbon Measurement'
+description: 'Mide y reporta la huella de carbono de tu pipeline CI/CD'
+author: 'GreenPipeline Framework'
+
+branding:
+  icon: 'activity'
+  color: 'green'
+
+inputs:
+  mode:
+    description: 'Modo de operación: start o report'
+    required: true
+  location:
+    description: 'Código de ubicación (CO, US, DE, etc)'
+    required: false
+    default: 'GLOBAL'
+  api-key:
+    description: 'API key para Electricity Maps (opcional)'
+    required: false
+  comment-pr:
+    description: 'Comentar resultados en PR'
+    required: false
+    default: 'true'
+  fail-on-threshold:
+    description: 'Fallar si emisiones > threshold (gramos CO2e)'
+    required: false
+
+outputs:
+  energy-joules:
+    description: 'Energía consumida en joules'
+    value: ${{ steps.measurement.outputs['energy-joules'] }}
+  carbon-grams:
+    description: 'Emisiones en gramos CO2e'
+    value: ${{ steps.measurement.outputs['carbon-grams'] }}
+  duration-seconds:
+    description: 'Duración del workflow'
+    value: ${{ steps.measurement.outputs['duration-seconds'] }}
+  sci-score:
+    description: 'Software Carbon Intensity score'
+    value: ${{ steps.measurement.outputs['sci-score'] }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup GreenPipeline
+      shell: bash
+      run: |
+        echo "🌱 Inicializando GreenPipeline..."
+        pip install psutil requests --quiet
+        
+    - name: Execute Measurement
+      id: measurement
+      shell: bash
+      env:
+        GP_MODE: ${{ inputs.mode }}
+        GP_LOCATION: ${{ inputs.location }}
+        GP_API_KEY: ${{ inputs.api-key }}
+        GP_THRESHOLD: ${{ inputs.fail-on-threshold }}
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        # Script embebido de medición
+        python3 << 'PYTHON_SCRIPT'
+        import os
+        import sys
+        import json
+        import time
+        import psutil
+        from datetime import datetime
+        
+        mode = os.environ.get("GP_MODE")
+        location = os.environ.get("GP_LOCATION", "GLOBAL")
+        
+        # Archivo temporal para métricas entre steps (usar GITHUB_WORKSPACE si está disponible)
+        metrics_dir = os.environ.get("GITHUB_WORKSPACE", "/tmp")
+        if not os.path.exists(metrics_dir):
+          try:
+            os.makedirs(metrics_dir, exist_ok=True)
+          except Exception:
+            pass
+        metrics_file = os.path.join(metrics_dir, "greenpipeline_metrics.json")
+        
+        if mode == "start":
+            # Guardar timestamp inicial y métricas base
+            data = {
+                "start_time": time.time(),
+                "start_cpu": psutil.cpu_percent(interval=1),
+                "location": location,
+                "workflow": os.environ.get("GITHUB_WORKFLOW", "unknown")
+            }
+            
+            with open(metrics_file, 'w') as f:
+                json.dump(data, f)
+            
+            print("✅ GreenPipeline iniciado - midiendo...")
+            print(f"📍 Ubicación: {location}")
+            
+        elif mode == "report":
+            # Leer métricas iniciales
+            if not os.path.exists(metrics_file):
+                print("⚠️  No se encontró medición inicial")
+                sys.exit(0)
+            
+            with open(metrics_file, 'r') as f:
+                start_data = json.load(f)
+            
+            # Calcular métricas finales
+            duration = time.time() - start_data["start_time"]
+            end_cpu = psutil.cpu_percent(interval=1)
+            avg_cpu = (start_data["start_cpu"] + end_cpu) / 2
+            
+            # Estimar energía (simplificado)
+            # TDP promedio cloud runner: 65W
+            # Modelo: Power = TDP * (CPU_util * 0.6 + 0.4)
+            cpu_util = avg_cpu / 100.0
+            power_watts = 65 * (cpu_util * 0.6 + 0.4)
+            energy_joules = power_watts * duration
+            energy_kwh = energy_joules / 3600000
+            
+            # Intensidad de carbono por ubicación
+            carbon_intensity_map = {
+                "CO": 165, "US": 389, "US-CA": 234,
+                "DE": 420, "FR": 55, "UK": 233,
+                "GLOBAL": 475
+            }
+            carbon_intensity = carbon_intensity_map.get(location, 475)
+            carbon_grams = energy_kwh * carbon_intensity
+            
+            # SCI Score
+            sci_score = carbon_grams
+            
+            # Crear reporte
+            report = {
+                "timestamp": datetime.now().isoformat(),
+                "workflow": start_data["workflow"],
+                "location": location,
+                "duration_seconds": round(duration, 2),
+                "metrics": {
+                    "cpu_percent": round(avg_cpu, 1),
+                    "energy_joules": round(energy_joules, 2),
+                    "energy_kwh": round(energy_kwh, 6),
+                    "carbon_grams": round(carbon_grams, 4),
+                    "carbon_intensity": carbon_intensity,
+                    "sci_score": round(sci_score, 4)
+                },
+                "equivalents": {
+                    "smartphone_charges": round((carbon_grams * 1000) / 0.062, 1),
+                    "trees_offset": round(carbon_grams / 21000 * 365, 4)
+                }
+            }
+            
+            # Output para GitHub Actions: usar el archivo provisto en GITHUB_OUTPUT
+            github_out = os.environ.get("GITHUB_OUTPUT")
+            if github_out:
+              try:
+                with open(github_out, "a") as f:
+                  f.write(f"energy-joules={report['metrics']['energy_joules']}\n")
+                  f.write(f"carbon-grams={report['metrics']['carbon_grams']}\n")
+                  f.write(f"duration-seconds={report['duration_seconds']}\n")
+                  f.write(f"sci-score={report['metrics']['sci_score']}\n")
+              except Exception:
+                # fallback a stdout
+                print(f"energy-joules={report['metrics']['energy_joules']}")
+                print(f"carbon-grams={report['metrics']['carbon_grams']}")
+                print(f"duration-seconds={report['duration_seconds']}")
+                print(f"sci-score={report['metrics']['sci_score']}")
+            else:
+              # fallback a stdout si GITHUB_OUTPUT no está disponible
+              print(f"energy-joules={report['metrics']['energy_joules']}")
+              print(f"carbon-grams={report['metrics']['carbon_grams']}")
+              print(f"duration-seconds={report['duration_seconds']}")
+              print(f"sci-score={report['metrics']['sci_score']}")
+            
+            # Mostrar reporte
+            print("\n" + "=" * 60)
+            print("🌱 GREENPIPELINE REPORT")
+            print("=" * 60)
+            print(f"⏱️  Duración:     {report['duration_seconds']} segundos")
+            print(f"⚡ Energía:      {report['metrics']['energy_joules']:.2f} joules")
+            print(f"🌍 Emisiones:    {report['metrics']['carbon_grams']:.4f}g CO2e")
+            print(f"📊 SCI Score:    {report['metrics']['sci_score']:.4f}")
+            print(f"📍 Ubicación:    {location} ({carbon_intensity}g/kWh)")
+            print(f"\n💡 Equivalente a: {report['equivalents']['smartphone_charges']:.1f} cargas de smartphone")
+            print("=" * 60)
+            
+            # Guardar reporte completo en el workspace (o /tmp si no existe)
+            report_path = os.path.join(metrics_dir, "greenpipeline_report.json")
+            with open(report_path, 'w') as f:
+              json.dump(report, f, indent=2)
+            
+            # Check threshold
+            threshold = os.environ.get("GP_THRESHOLD")
+            if threshold and float(threshold) < report['metrics']['carbon_grams']:
+                print(f"\n❌ THRESHOLD EXCEEDED: {report['metrics']['carbon_grams']:.4f}g > {threshold}g")
+                sys.exit(1)
+        
+        PYTHON_SCRIPT
+    
+    - name: Comment on PR
+      if: ${{ inputs.comment-pr == 'true' && github.event_name == 'pull_request' && inputs.mode == 'report' }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        if [ -f "/tmp/greenpipeline_report.json" ]; then
+          # Crear comentario con resultados
+          REPORT=$(cat /tmp/greenpipeline_report.json)
+          CARBON=$(echo $REPORT | jq -r '.metrics.carbon_grams')
+          ENERGY=$(echo $REPORT | jq -r '.metrics.energy_joules')
+          DURATION=$(echo $REPORT | jq -r '.duration_seconds')
+          LOCATION=$(echo $REPORT | jq -r '.location')
+          PHONES=$(echo $REPORT | jq -r '.equivalents.smartphone_charges')
+          
+          COMMENT="## 🌱 GreenPipeline Carbon Report
+          
+          | Métrica | Valor |
+          |---------|-------|
+          | ⏱️ Duración | ${DURATION}s |
+          | ⚡ Energía | ${ENERGY} joules |
+          | 🌍 Emisiones | **${CARBON}g CO2e** |
+          | 📍 Ubicación | ${LOCATION} |
+          
+          💡 **Equivalente a:** ${PHONES} cargas completas de smartphone
+          
+          ---
+          _Medido por [GreenPipeline Framework](https://github.com/greenpipeline)_"
+          
+          # Comentar en PR (requiere permisos)
+          echo "$COMMENT"
+        fi

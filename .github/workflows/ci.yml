@@ -1,0 +1,41 @@
+name: CI with GreenPipeline
+
+on: [push, pull_request]
+
+jobs:
+  test-with-carbon-measurement:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # ⭐ INICIO DE MEDICIÓN
+      - name: Start GreenPipeline
+        uses: ./.github/actions/greenpipeline
+        with:
+          mode: start
+          location: CO # Colombia
+
+      # TUS STEPS NORMALES
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # ⭐ REPORTE FINAL
+      - name: GreenPipeline Report
+        uses: ./.github/actions/greenpipeline
+        with:
+          mode: report
+          location: CO
+          comment-pr: true
+          fail-on-threshold: 1.0 # Fallar si > 1g CO2e
