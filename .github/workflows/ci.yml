@@ -1,6 +1,9 @@
 name: CI with GreenPipeline
 
 on: [push, pull_request]
+permissions:
+  contents: read
+  issues: write
 
 jobs:
   test-with-carbon-measurement:
