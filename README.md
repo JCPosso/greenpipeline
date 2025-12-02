@@ -18,7 +18,7 @@ GreenPipeline es un framework open-source que se integra en tu pipeline CI/CD pa
 pip install greenpipeline
 
 # O desde el código fuente
-git clone https://github.com/greenpipeline
+git clone https://github.com/JCPosso/greenpipeline
 pip install -e .
 ```
 
@@ -131,9 +131,8 @@ MIT License - ver [LICENSE](LICENSE) para más detalles.
 
 ## 📞 Contacto
 
-- Website: https://greenpipeline.dev
-- Twitter: @greenpipeline
-- Email: hello@greenpipeline.dev
+- Website: https://juancamiloposso01@gmail.com
+- Email: juancamiloposso01@gmail.com
 
 ---
 
