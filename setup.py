@@ -6,14 +6,14 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setup(
     name="greenpipeline",
     version="0.1.0",
-    author="GreenPipeline Team",
-    author_email="info@greenpipeline.dev",
+    author="JCPosso",
+    author_email="juancamiloposso01@gmail.com",
     description="Framework para medir y reducir la huella de carbono en CI/CD pipelines",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/greenpipeline/framework",
+    url="https://github.com/JCPosso/greenpipeline",
     project_urls={
-        "Bug Tracker": "https://github.com/greenpipeline/framework/issues",
+        "Bug Tracker": "https://github.com/JCPosso/greenpipeline/issues",
         "Documentation": "https://docs.greenpipeline.dev",
     },
     classifiers=[
